@@ -25,45 +25,97 @@ public class MyMath
         return ( (slope * x) + constant );
     }
 
-    public static float findGroundDistance(float altitude, float degree)
+    public static float findGroundHDistance(float altitude, float degree)
+    {
+        return (float) (altitude * ( Math.cos(Math.toRadians(90-degree)) / Math.cos(Math.toRadians(degree))) );
+    }
+
+    public static float findGroundVDistance(float altitude, float degree)
     {
         return (float) (altitude * ( Math.cos(Math.toRadians(degree)) / Math.cos(Math.toRadians(90-degree))) );
     }
 
-    public static NeighborPointList findNeighborPointList(float x, float y, float distance, float slope, String direction)
+    public static NeighborPointList findNeighborPointList(float x, float y, float hDistance, float vDistance, float slope, String direction, String pointStatus)
     {
-        float k = (float) Math.sqrt( Math.pow(distance, 2) / (Math.pow(slope, 2) + 1) );        // k2 + (mk)2 = (distance)2   -> (m2 +1)k2 = (distance)2
+        float kHorizontal = (float) Math.sqrt( Math.pow(hDistance, 2) / (Math.pow(slope, 2) + 1) );         // k2 + (mk)2 = (hDistance)2   -> (m2 +1)k2 = (hDistance)2
+        float kVertical = (float) Math.sqrt( Math.pow(vDistance, 2) / (Math.pow(slope, 2) + 1) );           // k2 + (mk)2 = (vDistance)2   -> (m2 +1)k2 = (vDistance)2
         float xLeftCoor, yLeftCoor, xRightCoor, yRightCoor;
-        float xDistance, yDistance;
+        float xHorizontalDistance, yHorizontalDistance, xVerticalDistance, yVerticalDistance;
 
-        xDistance = Math.abs(slope) * k;
-        yDistance = k;
+        xHorizontalDistance = Math.abs(slope) * kHorizontal;
+        yHorizontalDistance = kHorizontal;
+        xVerticalDistance   = kVertical;
+        yVerticalDistance   = Math.abs(slope) * kVertical;
 
         if(direction.equals("UP_POSITIVE")) {
-            xLeftCoor = x + xDistance;
-            xRightCoor = x - xDistance;
-            yLeftCoor = y - yDistance;
-            yRightCoor = y + yDistance;
+            xLeftCoor = x + xHorizontalDistance;
+            xRightCoor = x - xHorizontalDistance;
+            yLeftCoor = y - yHorizontalDistance;
+            yRightCoor = y + yHorizontalDistance;
+
+            if(pointStatus.equals("SECOND_POINT"))
+            {
+                xLeftCoor = xLeftCoor + xVerticalDistance;
+                xRightCoor = xRightCoor + xVerticalDistance;
+                yLeftCoor = yLeftCoor + yVerticalDistance;
+                yRightCoor = yRightCoor + yVerticalDistance;
+            }
         }
         else if(direction.equals("DOWN_POSITIVE")) {
-            xLeftCoor = x - xDistance;
-            xRightCoor = x + xDistance;
-            yLeftCoor = y + yDistance;
-            yRightCoor = y - yDistance;
+            xLeftCoor = x - xHorizontalDistance;
+            xRightCoor = x + xHorizontalDistance;
+            yLeftCoor = y + yHorizontalDistance;
+            yRightCoor = y - yHorizontalDistance;
+
+            if(pointStatus.equals("SECOND_POINT"))
+            {
+                xLeftCoor = xLeftCoor - xVerticalDistance;
+                xRightCoor = xRightCoor - xVerticalDistance;
+                yLeftCoor = yLeftCoor - yVerticalDistance;
+                yRightCoor = yRightCoor - yVerticalDistance;
+            }
         }
         else if(direction.equals("UP_NEGATIVE"))
         {
-            xLeftCoor   = x + xDistance;
-            xRightCoor  = x - xDistance;
-            yLeftCoor   = y + yDistance;
-            yRightCoor  = y - yDistance;
+            xLeftCoor   = x + xHorizontalDistance;
+            xRightCoor  = x - xHorizontalDistance;
+            yLeftCoor   = y + yHorizontalDistance;
+            yRightCoor  = y - yHorizontalDistance;
+
+            if(pointStatus.equals("SECOND_POINT"))
+            {
+                xLeftCoor = xLeftCoor - xVerticalDistance;
+                xRightCoor = xRightCoor - xVerticalDistance;
+                yLeftCoor = yLeftCoor + yVerticalDistance;
+                yRightCoor = yRightCoor + yVerticalDistance;
+            }
         }
-        else  // "DOWN_NEGATIVE"
+        else if(direction.equals("DOWN_NEGATIVE"))
         {
-            xLeftCoor   = x - xDistance;
-            xRightCoor  = x + xDistance;
-            yLeftCoor   = y - yDistance;
-            yRightCoor  = y + yDistance;
+            xLeftCoor   = x - xHorizontalDistance;
+            xRightCoor  = x + xHorizontalDistance;
+            yLeftCoor   = y - yHorizontalDistance;
+            yRightCoor  = y + yHorizontalDistance;
+
+            if(pointStatus.equals("SECOND_POINT"))
+            {
+                xLeftCoor = xLeftCoor + xVerticalDistance;
+                xRightCoor = xRightCoor + xVerticalDistance;
+                yLeftCoor = yLeftCoor - yVerticalDistance;
+                yRightCoor = yRightCoor - yVerticalDistance;
+            }
+        }
+        else        // "VERTICAL_INFINITY"
+        {
+            xLeftCoor   = x - hDistance;
+            xRightCoor  = x + hDistance;
+            yLeftCoor   = y;
+            yRightCoor  = y;
+
+            if(pointStatus.equals("SECOND_POINT"))
+            {
+                //
+            }
         }
 
         NeighborPointList pointList = new NeighborPointList(xLeftCoor, yLeftCoor, xRightCoor, yRightCoor);

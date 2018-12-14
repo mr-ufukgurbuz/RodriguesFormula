@@ -32,11 +32,10 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.Polygon;
 import javafx.scene.text.Font;
 import javafx.scene.text.FontWeight;
 import javafx.stage.Stage;
-import javafx.scene.Node;
 import javafx.scene.paint.Color;
 import javafx.scene.input.MouseEvent;
 import javafx.geometry.Point2D;
@@ -46,19 +45,20 @@ import javafx.event.EventHandler;
 import javafx.scene.*;
 import javafx.collections.*;
 
-
 public class MyApplication extends Application
 {
     Stage secondaryStage = new Stage();
-    final NumberAxis xAxis = new NumberAxis();
-    final NumberAxis yAxis = new NumberAxis();
+    Group myChartGroup = new Group();
+
+    final NumberAxis xAxis = new NumberAxis(0, 200, 5);
+    final NumberAxis yAxis = new NumberAxis(0, 200, 5);
     final LineChart<Number, Number> lineChart = new LineChart<Number, Number>(xAxis, yAxis);
     final ObservableList<XYChart.Data<Float, Float>> dataset = FXCollections.observableArrayList();
     final ObservableList<XYChart.Data<Float, Float>> datasetLeft = FXCollections.observableArrayList();
     final ObservableList<XYChart.Data<Float, Float>> datasetRight = FXCollections.observableArrayList();
 
     NeighborPointList pointList;
-    float ALTITUDE=4, HORIZANTAL_DEGREE=30, VERTICAL_DEGREE=20, DISTANCE=0;
+    float ALTITUDE = 10, HORIZANTAL_DEGREE = 30, VERTICAL_DEGREE = 20, H_DISTANCE = 0, V_DISTANCE = 0;
     int wayPointCounter = 0;
 
     @Override
@@ -107,12 +107,17 @@ public class MyApplication extends Application
                 HORIZANTAL_DEGREE = Float.parseFloat(horizontalField.getText());
                 VERTICAL_DEGREE = Float.parseFloat(verticalField.getText());
 
-                for(int index=0; index < dataset.size()-1; index++)
+                Double[] polygonPointArray = new Double[8];
+
+                for(int pointIndex=0; pointIndex < dataset.size()-1; pointIndex++)
                 {
-                    x1Coor = dataset.get(index).getXValue();
-                    y1Coor = dataset.get(index).getYValue();
-                    x2Coor = dataset.get(index+1).getXValue();
-                    y2Coor = dataset.get(index+1).getYValue();
+                    Polygon myFillPolygon = new Polygon();
+                    myFillPolygon.setFill(new Color(0.2, 0.1, 0.3, 0.2));
+
+                    x1Coor = dataset.get(pointIndex).getXValue();
+                    y1Coor = dataset.get(pointIndex).getYValue();
+                    x2Coor = dataset.get(pointIndex+1).getXValue();
+                    y2Coor = dataset.get(pointIndex+1).getYValue();
 
                     slope = MyMath.findEquationSlope(x1Coor, y1Coor, x2Coor, y2Coor);
 
@@ -127,7 +132,11 @@ public class MyApplication extends Application
                             direction = "DOWN_POSITIVE";
                         }
                     }
-                    else
+                    else if( (slope == Float.POSITIVE_INFINITY) || (slope == Float.NEGATIVE_INFINITY) )
+                    {
+                        direction = "VERTICAL_INFINITY";
+                    }
+                    else        // slope < 0
                     {
                         if(y1Coor <= y2Coor)
                         {
@@ -138,24 +147,25 @@ public class MyApplication extends Application
                             direction = "DOWN_NEGATIVE";
                         }
                     }
+                    int polygonCounter = 0;
 
-                    for(int pointCounter=2; pointCounter <= 3; pointCounter++)
+                    for(int pointCounter=0; pointCounter <= 1; pointCounter++)
                     {
-                        HBox altitudeHBox = (HBox) wrapperVBox.getChildren().get(index + pointCounter);
+                        HBox altitudeHBox = (HBox) wrapperVBox.getChildren().get(pointIndex + (pointCounter+2));     // horizontalAltitude ve verticalAltitude icin 2 index atla.
                         TextField altitudeField = (TextField) altitudeHBox.getChildren().get(1);
                         ALTITUDE = Float.parseFloat(altitudeField.getText());
-                        DISTANCE = MyMath.findGroundDistance(ALTITUDE, HORIZANTAL_DEGREE);
-                        System.out.println("Distance: " + DISTANCE);
+                        H_DISTANCE = MyMath.findGroundHDistance(ALTITUDE, HORIZANTAL_DEGREE);
+                        V_DISTANCE = MyMath.findGroundVDistance(ALTITUDE, VERTICAL_DEGREE);
 
-                        if(pointCounter == 2)
+                        if(pointCounter == 0)
                         {
-                            pointList = MyMath.findNeighborPointList(x1Coor, y1Coor, DISTANCE, slope, direction);
+                            pointList = MyMath.findNeighborPointList(x1Coor, y1Coor, H_DISTANCE, V_DISTANCE, slope, direction, "FIRST_POINT");
                         }
                         else
                         {
-                            pointList = MyMath.findNeighborPointList(x2Coor, y2Coor, DISTANCE, slope, direction);
+                            pointList = MyMath.findNeighborPointList(x2Coor, y2Coor, H_DISTANCE, V_DISTANCE, slope, direction, "SECOND_POINT");
                         }
-                        System.out.println(index + " -> " + direction + " -> "+ slope);
+                        System.out.println(pointIndex + " -> " + direction + " -> "+ slope);
 
                         xLeftCoor   = pointList.xLeftCoor();
                         yLeftCoor   = pointList.yLeftCoor();
@@ -166,11 +176,34 @@ public class MyApplication extends Application
                         XYChart.Data<Float, Float> dataRight = new XYChart.Data(xRightCoor, yRightCoor);
                         datasetLeft.add(dataLeft);
                         datasetRight.add(dataRight);
+
+                        double leftXPixel = xAxis.getDisplayPosition(xLeftCoor);
+                        double leftYPixel = yAxis.getDisplayPosition(yLeftCoor);
+                        double rightXPixel = xAxis.getDisplayPosition(xRightCoor);
+                        double rightYPixel = yAxis.getDisplayPosition(yRightCoor);
+
+                        if(pointCounter == 0)
+                        {
+                            polygonPointArray[polygonCounter]   = leftXPixel  + 65;
+                            polygonPointArray[polygonCounter+1] = leftYPixel  + 40;
+                            polygonPointArray[polygonCounter+2] = rightXPixel + 65;
+                            polygonPointArray[polygonCounter+3] = rightYPixel + 40;
+                        }
+                        else
+                        {
+                            polygonPointArray[polygonCounter] = rightXPixel + 65;
+                            polygonPointArray[polygonCounter+1] = rightYPixel + 40;
+                            polygonPointArray[polygonCounter+2]   = leftXPixel  + 65;
+                            polygonPointArray[polygonCounter+3] = leftYPixel  + 40;
+                        }
+                        polygonCounter = polygonCounter + 4;
                     }
+                    myFillPolygon.getPoints().addAll(polygonPointArray);
+                    myChartGroup.getChildren().add(myFillPolygon);
                 }
                 seriesLeft.setData(datasetLeft);
                 seriesRight.setData(datasetRight);
-                lineChart.getData().addAll(seriesLeft, seriesRight);
+                //lineChart.getData().addAll(seriesLeft, seriesRight);
             }
         });
         buttonsHBox.getChildren().add(drawButton);
@@ -184,6 +217,7 @@ public class MyApplication extends Application
             Point2D mouseSceneCoords = new Point2D(event.getSceneX(), event.getSceneY());
             double xPixelCoor = xAxis.sceneToLocal(mouseSceneCoords).getX();
             double yPixelCoor = yAxis.sceneToLocal(mouseSceneCoords).getY();
+            System.out.println("XPixel: " + xPixelCoor + " - YPixel: " + yPixelCoor);
             Number xCoor = xAxis.getValueForDisplay(xPixelCoor);
             Number yCoor = yAxis.getValueForDisplay(yPixelCoor);
 
@@ -201,17 +235,12 @@ public class MyApplication extends Application
 
         lineChart.getData().add(series);
         lineChart.setAxisSortingPolicy(LineChart.SortingPolicy.NONE);
+        lineChart.setMinWidth(900);
+        lineChart.setMinHeight(900);
 
-        Group group = new Group();
-        Rectangle rect = new Rectangle(20,20,200,200);
-        rect.setFill(new Color(0.6, 0.2,0.3, 0.1 ));
-        rect.setStroke(Color.TRANSPARENT);
-        group.getChildren().addAll(lineChart, rect);
-        lineChart.setMinWidth(790);
-        lineChart.setMinHeight(790);
+        myChartGroup.getChildren().add(lineChart);
 
-
-        Scene scene = new Scene(group, 800, 800);
+        Scene scene = new Scene(myChartGroup, 900, 900);
         Scene scene2 = new Scene(wrapperVBox, 250, 300);
 
         primaryStage.setScene(scene);
