@@ -25,14 +25,9 @@ public class MyMath
         return ( (slope * x) + constant );
     }
 
-    public static float findGroundHDistance(float altitude, float degree)
+    public static float findGroundDistance(float altitude, float degree)
     {
         return (float) (altitude * ( Math.cos(Math.toRadians(90-degree)) / Math.cos(Math.toRadians(degree))) );
-    }
-
-    public static float findGroundVDistance(float altitude, float degree)
-    {
-        return (float) (altitude * ( Math.cos(Math.toRadians(degree)) / Math.cos(Math.toRadians(90-degree))) );
     }
 
     public static NeighborPointList findNeighborPointList(float x, float y, float hDistance, float vDistance, float slope, String direction, String pointStatus)
@@ -48,7 +43,7 @@ public class MyMath
         yVerticalDistance   = Math.abs(slope) * kVertical;
 
         if(direction.equals("UP_POSITIVE")) {
-            xLeftCoor = x + xHorizontalDistance;
+            /*xLeftCoor = x + xHorizontalDistance;
             xRightCoor = x - xHorizontalDistance;
             yLeftCoor = y - yHorizontalDistance;
             yRightCoor = y + yHorizontalDistance;
@@ -59,10 +54,14 @@ public class MyMath
                 xRightCoor = xRightCoor + xVerticalDistance;
                 yLeftCoor = yLeftCoor + yVerticalDistance;
                 yRightCoor = yRightCoor + yVerticalDistance;
-            }
+            }*/
+            xLeftCoor   = x + xHorizontalDistance + xVerticalDistance;
+            xRightCoor  = x - xHorizontalDistance + xVerticalDistance;
+            yLeftCoor   = y - yHorizontalDistance + yVerticalDistance;
+            yRightCoor  = y + yHorizontalDistance + yVerticalDistance;
         }
         else if(direction.equals("DOWN_POSITIVE")) {
-            xLeftCoor = x - xHorizontalDistance;
+            /*xLeftCoor = x - xHorizontalDistance;
             xRightCoor = x + xHorizontalDistance;
             yLeftCoor = y + yHorizontalDistance;
             yRightCoor = y - yHorizontalDistance;
@@ -73,11 +72,15 @@ public class MyMath
                 xRightCoor = xRightCoor - xVerticalDistance;
                 yLeftCoor = yLeftCoor - yVerticalDistance;
                 yRightCoor = yRightCoor - yVerticalDistance;
-            }
+            }*/
+            xLeftCoor   = x - xHorizontalDistance - xVerticalDistance;
+            xRightCoor  = x + xHorizontalDistance - xVerticalDistance;
+            yLeftCoor   = y + yHorizontalDistance - yVerticalDistance;
+            yRightCoor  = y - yHorizontalDistance - yVerticalDistance;
         }
         else if(direction.equals("UP_NEGATIVE"))
         {
-            xLeftCoor   = x + xHorizontalDistance;
+            /*xLeftCoor   = x + xHorizontalDistance;
             xRightCoor  = x - xHorizontalDistance;
             yLeftCoor   = y + yHorizontalDistance;
             yRightCoor  = y - yHorizontalDistance;
@@ -88,11 +91,15 @@ public class MyMath
                 xRightCoor = xRightCoor - xVerticalDistance;
                 yLeftCoor = yLeftCoor + yVerticalDistance;
                 yRightCoor = yRightCoor + yVerticalDistance;
-            }
+            }*/
+            xLeftCoor   = x + xHorizontalDistance - xVerticalDistance;
+            xRightCoor  = x - xHorizontalDistance - xVerticalDistance;
+            yLeftCoor   = y + yHorizontalDistance + yVerticalDistance;
+            yRightCoor  = y - yHorizontalDistance + yVerticalDistance;
         }
         else if(direction.equals("DOWN_NEGATIVE"))
         {
-            xLeftCoor   = x - xHorizontalDistance;
+            /*xLeftCoor   = x - xHorizontalDistance;
             xRightCoor  = x + xHorizontalDistance;
             yLeftCoor   = y - yHorizontalDistance;
             yRightCoor  = y + yHorizontalDistance;
@@ -103,7 +110,11 @@ public class MyMath
                 xRightCoor = xRightCoor + xVerticalDistance;
                 yLeftCoor = yLeftCoor - yVerticalDistance;
                 yRightCoor = yRightCoor - yVerticalDistance;
-            }
+            }*/
+            xLeftCoor   = x - xHorizontalDistance + xVerticalDistance;
+            xRightCoor  = x + xHorizontalDistance + xVerticalDistance;
+            yLeftCoor   = y - yHorizontalDistance - yVerticalDistance;
+            yRightCoor  = y + yHorizontalDistance - yVerticalDistance;
         }
         else        // "VERTICAL_INFINITY"
         {

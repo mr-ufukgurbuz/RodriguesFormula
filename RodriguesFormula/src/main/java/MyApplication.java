@@ -49,6 +49,7 @@ public class MyApplication extends Application
 {
     Stage secondaryStage = new Stage();
     Group myChartGroup = new Group();
+    Group myPolygonGroup = new Group();
 
     final NumberAxis xAxis = new NumberAxis(0, 200, 5);
     final NumberAxis yAxis = new NumberAxis(0, 200, 5);
@@ -58,7 +59,7 @@ public class MyApplication extends Application
     final ObservableList<XYChart.Data<Float, Float>> datasetRight = FXCollections.observableArrayList();
 
     NeighborPointList pointList;
-    float ALTITUDE = 10, HORIZANTAL_DEGREE = 30, VERTICAL_DEGREE = 20, H_DISTANCE = 0, V_DISTANCE = 0;
+    float ALTITUDE = 10, HORIZANTAL_DEGREE = 30, VERTICAL_DEGREE = 70, ANTENNA_DEGREE = 20, ANTENNA_MAX_DEGREE = 85, H_DISTANCE = 0, V1_DISTANCE = 0, V2_DISTANCE = 0;
     int wayPointCounter = 0;
 
     @Override
@@ -89,10 +90,19 @@ public class MyApplication extends Application
         drawButton.setPrefWidth(80);
         drawButton.setPrefHeight(25);
 
+        Button clearButton = new Button("Clear");
+        clearButton.setVisible(false);
+        clearButton.setPrefWidth(80);
+        clearButton.setPrefHeight(25);
+
         HBox horizontalDegreeHBox = createHBoxNode("Horizontal Degree: ", HORIZANTAL_DEGREE);
         wrapperVBox.getChildren().add(horizontalDegreeHBox);
         HBox verticalDegreeHBox = createHBoxNode("Vertical Degree: ", VERTICAL_DEGREE);
         wrapperVBox.getChildren().add(verticalDegreeHBox);
+        HBox antennaDegreeHBox = createHBoxNode("Antenna Degree: ", ANTENNA_DEGREE);
+        wrapperVBox.getChildren().add(antennaDegreeHBox);
+        HBox antennaMaxDegreeHBox = createHBoxNode("Antenna Max Degree: ", ANTENNA_MAX_DEGREE);
+        wrapperVBox.getChildren().add(antennaMaxDegreeHBox);
         // ------------------- MOUSE EVENT (DRAW BUTTON) ------------------
         drawButton.setOnAction(new EventHandler<ActionEvent>() {
             float x1Coor, y1Coor, x2Coor, y2Coor, xLeftCoor, yLeftCoor, xRightCoor, yRightCoor, slope;
@@ -100,12 +110,20 @@ public class MyApplication extends Application
 
             @Override
             public void handle(ActionEvent event) {
+                myPolygonGroup.getChildren().clear();
+
                 HBox horizontalDegreeHBox = (HBox) wrapperVBox.getChildren().get(0);
                 HBox verticalDegreeHBox = (HBox) wrapperVBox.getChildren().get(1);
+                HBox antennaDegreeHBox = (HBox) wrapperVBox.getChildren().get(2);
+                HBox antennaMaxDegreeHBox = (HBox) wrapperVBox.getChildren().get(3);
                 TextField horizontalField = (TextField) horizontalDegreeHBox.getChildren().get(1);
                 TextField verticalField = (TextField) verticalDegreeHBox.getChildren().get(1);
+                TextField antennaField = (TextField) antennaDegreeHBox.getChildren().get(1);
+                TextField antennaMaxField = (TextField) antennaMaxDegreeHBox.getChildren().get(1);
                 HORIZANTAL_DEGREE = Float.parseFloat(horizontalField.getText());
                 VERTICAL_DEGREE = Float.parseFloat(verticalField.getText());
+                ANTENNA_DEGREE = Float.parseFloat(antennaField.getText());
+                ANTENNA_MAX_DEGREE = Float.parseFloat(antennaMaxField.getText());
 
                 Double[] polygonPointArray = new Double[8];
 
@@ -151,19 +169,22 @@ public class MyApplication extends Application
 
                     for(int pointCounter=0; pointCounter <= 1; pointCounter++)
                     {
-                        HBox altitudeHBox = (HBox) wrapperVBox.getChildren().get(pointIndex + (pointCounter+2));     // horizontalAltitude ve verticalAltitude icin 2 index atla.
-                        TextField altitudeField = (TextField) altitudeHBox.getChildren().get(1);
+                        HBox altitudeHBox = (HBox) wrapperVBox.getChildren().get(pointIndex + (pointCounter+4));    // horizontalDegree, verticalDegree, antennaDegree ve antennaMaxDegree
+                        TextField altitudeField = (TextField) altitudeHBox.getChildren().get(1);                    // icin 4 index atla.
                         ALTITUDE = Float.parseFloat(altitudeField.getText());
-                        H_DISTANCE = MyMath.findGroundHDistance(ALTITUDE, HORIZANTAL_DEGREE);
-                        V_DISTANCE = MyMath.findGroundVDistance(ALTITUDE, VERTICAL_DEGREE);
+                        H_DISTANCE = MyMath.findGroundDistance(ALTITUDE, HORIZANTAL_DEGREE);
+                        V1_DISTANCE = MyMath.findGroundDistance(ALTITUDE, VERTICAL_DEGREE - (ALTITUDE/2) );  // VERTICAL_DEGREE - (ANTENNA_DEGREE/2)     -> FIRST_POINT
+                        V2_DISTANCE = MyMath.findGroundDistance(ALTITUDE, VERTICAL_DEGREE + (ALTITUDE/2) );  // VERTICAL_DEGREE + (ANTENNA_DEGREE/2)     -> SECOND_POINT
+
+                        System.out.println(H_DISTANCE + " - >> " + V1_DISTANCE + " - >> " + V2_DISTANCE);
 
                         if(pointCounter == 0)
                         {
-                            pointList = MyMath.findNeighborPointList(x1Coor, y1Coor, H_DISTANCE, V_DISTANCE, slope, direction, "FIRST_POINT");
+                            pointList = MyMath.findNeighborPointList(x1Coor, y1Coor, H_DISTANCE, V1_DISTANCE, slope, direction, "FIRST_POINT");
                         }
                         else
                         {
-                            pointList = MyMath.findNeighborPointList(x2Coor, y2Coor, H_DISTANCE, V_DISTANCE, slope, direction, "SECOND_POINT");
+                            pointList = MyMath.findNeighborPointList(x2Coor, y2Coor, H_DISTANCE, V2_DISTANCE, slope, direction, "SECOND_POINT");
                         }
                         System.out.println(pointIndex + " -> " + direction + " -> "+ slope);
 
@@ -199,20 +220,32 @@ public class MyApplication extends Application
                         polygonCounter = polygonCounter + 4;
                     }
                     myFillPolygon.getPoints().addAll(polygonPointArray);
-                    myChartGroup.getChildren().add(myFillPolygon);
+                    myPolygonGroup.getChildren().add(myFillPolygon);
                 }
                 seriesLeft.setData(datasetLeft);
                 seriesRight.setData(datasetRight);
                 //lineChart.getData().addAll(seriesLeft, seriesRight);
             }
         });
-        buttonsHBox.getChildren().add(drawButton);
+
+        // ------------------- MOUSE EVENT (CLEAR BUTTON) ------------------
+        clearButton.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent event) {
+                myPolygonGroup.getChildren().clear();
+                myChartGroup.getChildren().clear();
+                myChartGroup.getChildren().addAll(lineChart, myPolygonGroup);
+            }
+        });
+
+        buttonsHBox.getChildren().addAll(drawButton, clearButton);
         wrapperVBox.getChildren().add(buttonsHBox);
 
         // ------------------- MOUSE EVENT (CHART) ------------------
         lineChart.setOnMousePressed((MouseEvent event) ->
         {
             drawButton.setVisible(true);
+            clearButton.setVisible(true);
 
             Point2D mouseSceneCoords = new Point2D(event.getSceneX(), event.getSceneY());
             double xPixelCoor = xAxis.sceneToLocal(mouseSceneCoords).getX();
@@ -229,7 +262,7 @@ public class MyApplication extends Application
             primaryStage.setTitle("" + xCoor.floatValue() + ",  " + yCoor.floatValue());
 
             HBox myHBoxNode = createHBoxNode("Altitude " + (wayPointCounter) + ": ", ALTITUDE);
-            wrapperVBox.getChildren().add(wayPointCounter+2, myHBoxNode);
+            wrapperVBox.getChildren().add(wayPointCounter+4, myHBoxNode);   // First four indexes are -> HORIZONTAL_DEGREE, VERTICAL_DEGREE, ANTENNA_DEGREE, ANTENNA_MAX_DEGREE
             wayPointCounter++;
         });
 
@@ -238,7 +271,7 @@ public class MyApplication extends Application
         lineChart.setMinWidth(900);
         lineChart.setMinHeight(900);
 
-        myChartGroup.getChildren().add(lineChart);
+        myChartGroup.getChildren().addAll(lineChart, myPolygonGroup);
 
         Scene scene = new Scene(myChartGroup, 900, 900);
         Scene scene2 = new Scene(wrapperVBox, 250, 300);
