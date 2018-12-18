@@ -45,6 +45,8 @@ import javafx.event.EventHandler;
 import javafx.scene.*;
 import javafx.collections.*;
 
+import java.util.ArrayList;
+
 public class MyApplication extends Application
 {
     Stage secondaryStage = new Stage();
@@ -59,6 +61,7 @@ public class MyApplication extends Application
     final ObservableList<XYChart.Data<Float, Float>> datasetRight = FXCollections.observableArrayList();
 
     NeighborPointList pointList;
+    ArrayList<Point> pointArrayList;
     float ALTITUDE = 10, HORIZANTAL_DEGREE = 30, VERTICAL_DEGREE = 70, ANTENNA_DEGREE = 20, ANTENNA_MAX_DEGREE = 85, H_DISTANCE = 0, V1_DISTANCE = 0, V2_DISTANCE = 0;
     int wayPointCounter = 0;
 
@@ -139,30 +142,48 @@ public class MyApplication extends Application
 
                     slope = MyMath.findEquationSlope(x1Coor, y1Coor, x2Coor, y2Coor);
 
-                    if(slope >= 0)
+                    if( (slope == Float.POSITIVE_INFINITY) || (slope == Float.NEGATIVE_INFINITY) )
                     {
-                        if(x1Coor <= x2Coor)
+                        if(y1Coor <= y2Coor)
                         {
-                            direction = "UP_POSITIVE";
+                            direction = "NORTH";
                         }
                         else
                         {
-                            direction = "DOWN_POSITIVE";
+                            direction = "SOUTH";
                         }
                     }
-                    else if( (slope == Float.POSITIVE_INFINITY) || (slope == Float.NEGATIVE_INFINITY) )
+                    else if(slope == 0)
                     {
-                        direction = "VERTICAL_INFINITY";
+                        if(x1Coor <= x2Coor)
+                        {
+                            direction = "EAST";
+                        }
+                        else
+                        {
+                            direction = "WEST";
+                        }
+                    }
+                    else if(slope > 0)
+                    {
+                        if(x1Coor <= x2Coor)
+                        {
+                            direction = "NORTH_EAST";
+                        }
+                        else
+                        {
+                            direction = "SOUTH_WEST";
+                        }
                     }
                     else        // slope < 0
                     {
                         if(y1Coor <= y2Coor)
                         {
-                            direction = "UP_NEGATIVE";
+                            direction = "NORTH_WEST";
                         }
                         else
                         {
-                            direction = "DOWN_NEGATIVE";
+                            direction = "SOUTH_EAST";
                         }
                     }
                     int polygonCounter = 0;
@@ -173,25 +194,32 @@ public class MyApplication extends Application
                         TextField altitudeField = (TextField) altitudeHBox.getChildren().get(1);                    // icin 4 index atla.
                         ALTITUDE = Float.parseFloat(altitudeField.getText());
                         H_DISTANCE = MyMath.findGroundDistance(ALTITUDE, HORIZANTAL_DEGREE);
-                        V1_DISTANCE = MyMath.findGroundDistance(ALTITUDE, VERTICAL_DEGREE - (ALTITUDE/2) );  // VERTICAL_DEGREE - (ANTENNA_DEGREE/2)     -> FIRST_POINT
-                        V2_DISTANCE = MyMath.findGroundDistance(ALTITUDE, VERTICAL_DEGREE + (ALTITUDE/2) );  // VERTICAL_DEGREE + (ANTENNA_DEGREE/2)     -> SECOND_POINT
+                        V1_DISTANCE = MyMath.findGroundDistance(ALTITUDE, VERTICAL_DEGREE - (ANTENNA_DEGREE/2) );  // VERTICAL_DEGREE - (ANTENNA_DEGREE/2)     -> FIRST_POINT
+                        V2_DISTANCE = MyMath.findGroundDistance(ALTITUDE, VERTICAL_DEGREE + (ANTENNA_DEGREE/2) );  // VERTICAL_DEGREE + (ANTENNA_DEGREE/2)     -> SECOND_POINT
 
                         System.out.println(H_DISTANCE + " - >> " + V1_DISTANCE + " - >> " + V2_DISTANCE);
 
                         if(pointCounter == 0)
                         {
-                            pointList = MyMath.findNeighborPointList(x1Coor, y1Coor, H_DISTANCE, V1_DISTANCE, slope, direction, "FIRST_POINT");
+                            //pointList = MyMath.findNeighborPointList2(x1Coor, y1Coor, ALTITUDE, H_DISTANCE, V1_DISTANCE, slope, direction);
+                            pointArrayList = MyMath.findNeighborPointList(x1Coor, y1Coor, ALTITUDE, H_DISTANCE, V1_DISTANCE, slope, direction);
                         }
                         else
                         {
-                            pointList = MyMath.findNeighborPointList(x2Coor, y2Coor, H_DISTANCE, V2_DISTANCE, slope, direction, "SECOND_POINT");
+                            //pointList = MyMath.findNeighborPointList2(x2Coor, y2Coor, ALTITUDE, H_DISTANCE, V2_DISTANCE, slope, direction);
+                            pointArrayList = MyMath.findNeighborPointList(x2Coor, y2Coor, ALTITUDE, H_DISTANCE, V2_DISTANCE, slope, direction);
+
                         }
                         System.out.println(pointIndex + " -> " + direction + " -> "+ slope);
 
-                        xLeftCoor   = pointList.xLeftCoor();
+                        /*xLeftCoor   = pointList.xLeftCoor();
                         yLeftCoor   = pointList.yLeftCoor();
                         xRightCoor  = pointList.xRightCoor();
-                        yRightCoor  = pointList.yRightCoor();
+                        yRightCoor  = pointList.yRightCoor();*/
+                        xLeftCoor   = pointArrayList.get(0).getX();
+                        yLeftCoor   = pointArrayList.get(0).getY();
+                        xRightCoor  = pointArrayList.get(1).getX();
+                        yRightCoor  = pointArrayList.get(1).getY();
 
                         XYChart.Data<Float, Float> dataLeft = new XYChart.Data(xLeftCoor, yLeftCoor);
                         XYChart.Data<Float, Float> dataRight = new XYChart.Data(xRightCoor, yRightCoor);
